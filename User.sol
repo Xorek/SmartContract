@@ -1,16 +1,16 @@
 pragma solidity ^0.4.5;
  
 import "./ID.sol";
-import "./Quotation.sol";
+import "./Market.sol";
 import "./UserList.sol";
 
 contract User
 {
     //仓单数据结构
-    struct Receipt
+    struct Sheet
     {
         string      user_id_;       //客户id
-        uint        receipt_id_;    //仓单序号
+        uint        sheet_id_;    //仓单序号
         string      class_id_;      //品种id
         string      make_date_;     //产期
         string      lev_id_;        //等级
@@ -54,7 +54,7 @@ contract User
     //协商交易请求数据结构 发送
     struct neg_req_send_st
     {
-        uint        receipt_id_;    //仓单序号
+        uint        sheet_id_;    //仓单序号
         uint        quantity_;      //交易数量
         uint        price_;         //价格
         uint        negotiate_id_;  //协商编号
@@ -65,7 +65,7 @@ contract User
     //协商交易请求数据结构 接收
     struct neg_req_receive_st
     {
-        uint        receipt_id_;        //仓单序号
+        uint        sheet_id_;        //仓单序号
         uint        quantity_;          //交易数量
         uint        price_;             //价格
         uint        neg_id_;            //协商编号
@@ -75,12 +75,12 @@ contract User
     }
     
      
-     Quotation                          quotation;          //行情合约变量
+     Market                          market;          //行情合约变量
      CreateID                        ID;                 //ID合约变量
      UserList                           user_list;          //用户列表合约变量
      
      //存储仓单     
-     mapping(uint => Receipt)           ReceiptMap;         //仓单ID => 仓单
+     mapping(uint => Sheet)           sheet_map;         //仓单ID => 仓单
         
      //存储挂牌请求     
      list_req_st[]                      list_req_array;     
@@ -101,77 +101,77 @@ contract User
      
      
      //构造函数
-     function User(address id_addr, address quo_addr, address user_list_addr)
+     function User(address id_addr, address market_addr, address user_list_addr)
      {
-         ID         =   ID_contract(id_addr);
-         quotation  =   Quotation(quo_addr);
+         ID         =   CreateID(id_addr);
+         market  =   Market(market_addr);
          user_list  =   UserList(user_list_addr);
      }
      
     //构造仓单 "A",0,"sugar","2017","lev","wh_id","place",30
-   function CreateRecipt(string user_id, uint receipt_id, string class_id,string make_date,
+   function CreateRecipt(string user_id, uint market_id, string class_id,string make_date,
                         string lev_id, string wh_id, string place_id,  uint receipt_amount)
     {
         
-        ReceiptMap[receipt_id] = Receipt(user_id, receipt_id,class_id, make_date, lev_id, 
+        sheet_map[market_id] = Sheet(user_id, market_id,class_id, make_date, lev_id, 
                                         wh_id, place_id, receipt_amount,0,receipt_amount,true);
     }
     
     //获取持有者的仓单数量
-    function getReceiptAmount(uint receipt_id) returns (uint)
+    function getReceiptAmount(uint market_id) returns (uint)
     {
-        return ReceiptMap[receipt_id].receipt_amount_;
+        return sheet_map[market_id].receipt_amount_;
     }
     
      //获取可用仓单数量
-    function getAvailableAmount(uint receipt_id) returns (uint)
+    function getAvailableAmount(uint market_id) returns (uint)
     {
-        return ReceiptMap[receipt_id].available_amount_;
+        return sheet_map[market_id].available_amount_;
     }
        
     //冻结仓单
-    function freeze(uint receipt_id, uint amount) returns (bool)
+    function freeze(uint market_id, uint amount) returns (bool)
     {
-         if(amount > ReceiptMap[receipt_id].available_amount_)  
+         if(amount > sheet_map[market_id].available_amount_)  
               return false;
               
-         ReceiptMap[receipt_id].frozen_amount_    += amount;
-         ReceiptMap[receipt_id].available_amount_ -= amount;
+         sheet_map[market_id].frozen_amount_    += amount;
+         sheet_map[market_id].available_amount_ -= amount;
          
          return true;
     }
 
     
     //挂牌请求 "zhang",0,10,20
-    function listRequire(string user_id, uint receipt_id, uint price, uint quo_qty) returns(uint quo_id )
+    function listRequire(string user_id, uint market_id, uint price, uint quo_qty) returns(uint quo_id )
     {
-        if(ReceiptMap[receipt_id].state_ == false)
+        if(sheet_map[market_id].state_ == false)
         {
              error("ListRequire():仓单序号不存在","错误代码：",uint(-2));
              return uint(-2);
         }
-        if(quo_qty > ReceiptMap[receipt_id].available_amount_)  
+        if(quo_qty > sheet_map[market_id].available_amount_)  
          {
              error("ListRequire():可用仓单数量不足","错误代码：",uint(-3));
              return uint(-3);
         }
         
-        quotation.insertList1(receipt_id, ReceiptMap[receipt_id].class_id_, ReceiptMap[receipt_id].make_date_,
-                                ReceiptMap[receipt_id].lev_id_,ReceiptMap[receipt_id].wh_id_,ReceiptMap[receipt_id].place_id_);
+        market.insertList1(market_id, sheet_map[market_id].class_id_, sheet_map[market_id].make_date_,
+                                sheet_map[market_id].lev_id_,sheet_map[market_id].wh_id_,sheet_map[market_id].place_id_);
                                 
-        quo_id = quotation.insertList2(price, quo_qty, 0, quo_qty, "挂牌截止日",6039, user_id);
+        quo_id = market.insertList2(price, quo_qty, 0, quo_qty, "挂牌截止日",6039, user_id);
         
         //挂牌成功后，冻结仓单
         if(quo_id >0)
         {
-           if( ! freeze(receipt_id, quo_qty))
+           if( ! freeze(market_id, quo_qty))
             {
                     error1("冻结仓单失败");
                     return;
             }
         }
         //添加挂牌请求
-        list_req_array.push( list_req_st(receipt_id, quo_id, price, quo_qty, 0, quo_qty) ); 
+        list_req_array.push( list_req_st(market_id, quo_id, price, quo_qty, 0, quo_qty) ); 
     }
     
     //更新卖方挂牌请求
@@ -192,11 +192,11 @@ contract User
     //摘牌请求 "li",1,10
     function delListReq(string user_id, uint quo_id, uint deal_qty) 
     {
-        quotation.delList(user_id, quo_id, deal_qty);
+        market.delList(user_id, quo_id, deal_qty);
     }
     
     //成交 创建“卖”合同
-    function dealContract(uint  receipt_id, string  buy_or_sell, 
+    function dealSellContract(uint  receipt_id, string  buy_or_sell, 
                           uint price, uint con_qty, string countparty_id) returns(uint)
     {
         uint con_id = ID.getConID();//获取合同编号
@@ -236,7 +236,7 @@ contract User
     function sendNegReq(uint receipt_id, uint price, 
                                 uint quantity, string counterparty_id) returns(uint)
     {
-        if(quantity > ReceiptMap[receipt_id].available_amount_)
+        if(quantity > sheet_map[receipt_id].available_amount_)
         {
             error("negotiate_req():可用仓单数量不足","错误代码:",uint(-1));
             return uint(-1);
@@ -258,7 +258,7 @@ contract User
         //调用对手方协商交易请求的接收方法
         User counterparty =  User( user_list.GetUserConAddr(counterparty_id) );
         counterparty.recieveNegReq(receipt_id,quantity,price,
-                                neg_id, ReceiptMap[receipt_id].user_id_);
+                                neg_id, sheet_map[receipt_id].user_id_);
         
         
     }
@@ -283,10 +283,10 @@ contract User
         
         //创建卖方合同
         User user_sell = User(neg_req_receive_array[i].sell_con_addr_);
-        uint con_id_tmp = user_sell.dealSellContract(neg_req_receive_array[i].receipt_id_, "卖", neg_req_receive_array[i].price_,
+        uint con_id_tmp = user_sell.dealSellContract(neg_req_receive_array[i].sheet_id_, "卖", neg_req_receive_array[i].price_,
                                 neg_req_receive_array[i].quantity_,user_buy_id);
         //创建买方合同
-        dealBuyContract(con_id_tmp,neg_req_receive_array[i].receipt_id_, "买", neg_req_receive_array[i].price_,
+        dealBuyContract(con_id_tmp,neg_req_receive_array[i]. sheet_id_, "买", neg_req_receive_array[i].price_,
                          neg_req_receive_array[i].quantity_,neg_req_receive_array[i].user_sell_id_);
         
     }
