@@ -23,7 +23,7 @@ contract User
     }
      
     //挂牌请求数据结构
-    struct list_req_st
+    struct ListRequest
     {
          uint       receipt_id_;    //仓单序号
          uint       quo_id_;        //挂单编号
@@ -34,7 +34,7 @@ contract User
     }
     
     //合同数据结构
-    struct contract_st
+    struct  TradeContract
     {
         uint        con_data_;          //合同日期
         uint        con_id_;            //合同编号
@@ -52,7 +52,7 @@ contract User
     }   
     
     //协商交易请求数据结构 发送
-    struct neg_req_send_st
+    struct NegSendRequest
     {
         uint        sheet_id_;    //仓单序号
         uint        quantity_;      //交易数量
@@ -63,7 +63,7 @@ contract User
     }
     
     //协商交易请求数据结构 接收
-    struct neg_req_receive_st
+    struct NegReceiveRequest
     {
         uint        sheet_id_;        //仓单序号
         uint        quantity_;          //交易数量
@@ -83,14 +83,14 @@ contract User
      mapping(uint => Sheet)           sheet_map;         //仓单ID => 仓单
         
      //存储挂牌请求     
-     list_req_st[]                      list_req_array;     
+     ListRequest[]                      list_req_array;     
      
      //存储合同
-     mapping(uint => contract_st)       contract_map;       //合同编号 => 合同
+     mapping(uint => TradeContract)       contract_map;       //合同编号 => 合同
      
      //协商交易请求列表
-     neg_req_send_st[]                  neg_req_send_array; 
-     neg_req_receive_st[]               neg_req_receive_array; 
+     NegSendRequest[]                  neg_req_send_array; 
+     NegReceiveRequest[]               neg_req_receive_array; 
      
       
      //打印错误信息
@@ -171,7 +171,7 @@ contract User
             }
         }
         //添加挂牌请求
-        list_req_array.push( list_req_st(market_id, quo_id, price, quo_qty, 0, quo_qty) ); 
+        list_req_array.push( ListRequest(market_id, quo_id, price, quo_qty, 0, quo_qty) ); 
     }
     
     //更新卖方挂牌请求
@@ -252,7 +252,7 @@ contract User
         uint    neg_id = ID.getNegID();//协商交易编号
         
         //更新协商交易请求列表（发送）
-        neg_req_send_array.push( neg_req_send_st(receipt_id,quantity,price,
+        neg_req_send_array.push( NegSendRequest(receipt_id,quantity,price,
                                 neg_id,counterparty_id,"未成交") );
        
         //调用对手方协商交易请求的接收方法
@@ -268,7 +268,7 @@ contract User
     function recieveNegReq(uint receipt_id, uint price, uint quantity, 
                                     uint neg_id,string user_sell_id)
     {
-        neg_req_receive_array.push( neg_req_receive_st(receipt_id,quantity,price,
+        neg_req_receive_array.push( NegReceiveRequest(receipt_id,quantity,price,
                                 neg_id,user_sell_id, msg.sender,"未成交") );
     }
     

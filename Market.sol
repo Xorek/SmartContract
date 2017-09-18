@@ -5,7 +5,7 @@ import "./ID.sol";
  
 contract  Market
 {
-    struct data_st
+    struct MarketData
     {
         uint        date_;      //挂牌日期
         uint        id_;        //挂牌编号
@@ -30,7 +30,7 @@ contract  Market
     //uint                        quo_id_ = 0; //挂牌编号从 1 开始
     CreateID                     id;
     uint                        market_id;
-    mapping(uint => data_st)    data_map;   //挂牌编号 => 挂牌数据
+    mapping(uint => MarketData)    data_map;   //挂牌编号 => 挂牌数据
     
     //输出行情 
     event   print_1( uint,uint,uint,string,string,string,string,string);
