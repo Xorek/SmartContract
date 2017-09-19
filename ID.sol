@@ -1,7 +1,4 @@
-﻿pragma solidity ^0.4.5;
-
-
-
+pragma solidity ^0.4.5;
 contract CreateID
 {
     uint        receipt_id_;    //仓单id
