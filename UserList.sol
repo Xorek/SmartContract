@@ -1,7 +1,7 @@
 pragma solidity ^0.4.5;
 
 import "./ID.sol";
-import "./Quotation.sol";
+import "./Market.sol";
 import "./User.sol";
  
 contract UserList
@@ -14,8 +14,8 @@ contract UserList
     //构造函数
     function UserList()
     {
-       id_con_addr     =       new ID_contract();
-       quo_con_addr    =       new Quotation(); 
+       id_con_addr     =       new CreateID();
+       quo_con_addr    =       new Market(); 
     }
     
     //创建用户
